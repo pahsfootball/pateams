@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIAA Team Directory</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pahs: {
+                            black: '#0a0a0a',     // Main page background
+                            mainBg: '#52525b',    // Lighter Gray Content Background
+                            cardLight: '#f3f4f6', // Light Gray Card BG
+                            gold: '#fbbf24',      // Athletic Gold Accent
+                        }
+                    },
+                    animation: {
+                        marquee: 'marquee 25s linear infinite',
+                    },
+                    keyframes: {
+                        marquee: {
+                            '0%': { transform: 'translateX(100%)' },
+                            '100%': { transform: 'translateX(-100%)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Smooth Scrolling */
+        html { scroll-behavior: smooth; }
+        body { background-color: #0a0a0a; color: #f5f5f5; }
+        
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #fbbf24; }
+        
+        /* Card Hover Effects */
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.1); 
+            border-color: #fbbf24;
+        }
+
+        /* Glass Header */
+        .glass-header {
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Dropdown Arrow Styling */
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
+    </style>
+</head>
+<body class="antialiased font-sans selection:bg-pahs-gold selection:text-black">
+
+    <div class="sticky top-0 z-40 w-full shadow-lg">
+        
+        <div class="bg-pahs-gold text-black text-xs font-bold py-1.5 overflow-hidden border-b border-black/10">
+            <div class="animate-marquee whitespace-nowrap">
+                •    This information comes from public online records and may not be 100% accurate.   •
+            </div>
+        </div>
+
+        <header class="glass-header py-4 px-4 sm:px-6 transition-all">
+            <div class="max-w-7xl mx-auto flex flex-col gap-4">
+                
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <a href="https://www.pahsfootball.com" class="group flex items-center gap-2 px-4 py-2 bg-pahs-gold text-black rounded-full text-sm font-bold hover:bg-white transition-all shadow-md hover:shadow-lg hover:shadow-white/20">
+                            <i class="fa-solid fa-house text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+                            <span>Home</span>
+                        </a>
+                        <h1 class="text-2xl font-extrabold text-white tracking-tight hidden sm:block">Team Directory</h1>
+                    </div>
+                </div>
+
+                <div class="relative w-full group">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 group-focus-within:text-pahs-gold transition-colors">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" id="searchInput" placeholder="Search schools, towns, counties..." 
+                        class="w-full pl-10 pr-10 py-3 bg-[#171717] border border-pahs-gold text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-pahs-gold focus:border-transparent transition-all shadow-sm font-medium placeholder-gray-500">
+                    <button id="clearBtn" class="absolute inset-y-0 right-3 text-gray-500 hover:text-pahs-gold hidden transition-colors">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="relative min-w-[140px] flex-1 sm:flex-none">
+                        <select id="districtFilter" class="w-full pl-3 pr-8 py-2 bg-[#171717] border border-pahs-gold rounded-lg text-sm font-semibold text-gray-300 focus:ring-2 focus:ring-pahs-gold cursor-pointer shadow-sm hover:bg-[#202020] transition-colors">
+                            <option value="All">All Districts</option>
+                        </select>
+                    </div>
+                    <div class="relative min-w-[120px] flex-1 sm:flex-none">
+                        <select id="classFilter" class="w-full pl-3 pr-8 py-2 bg-[#171717] border border-pahs-gold rounded-lg text-sm font-semibold text-gray-300 focus:ring-2 focus:ring-pahs-gold cursor-pointer shadow-sm hover:bg-[#202020] transition-colors">
+                            <option value="All">All Classes</option>
+                        </select>
+                    </div>
+                    
+                    <div id="filterSummary" class="hidden flex items-center gap-2 ml-auto">
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Filtered by:</span>
+                        <span id="activeFiltersList" class="flex gap-2"></span>
+                        <button onclick="resetAllFilters()" class="text-xs font-bold text-red-400 hover:text-red-300 ml-2 uppercase tracking-wide">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-8 pb-8 mt-6 bg-pahs-mainBg rounded-3xl shadow-xl border border-[#3f3f46]">
+        
+        <div id="loading" class="flex flex-col justify-center items-center py-32 opacity-70">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-pahs-gold mb-4"></i>
+            <p class="font-medium text-white">Loading directory...</p>
+        </div>
+
+        <div id="teamGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 hidden pt-8">
+            </div>
+
+        <div id="noResults" class="hidden flex flex-col items-center justify-center py-32 text-center">
+            <div class="w-16 h-16 bg-[#262626] rounded-full flex items-center justify-center mb-4 border border-[#333]">
+                <i class="fa-solid fa-filter text-gray-500 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">No teams found</h3>
+            <p class="text-gray-300 max-w-xs mx-auto mt-1">Try adjusting your filters or search term.</p>
+            <button onclick="resetAllFilters()" class="mt-6 px-6 py-2 bg-pahs-gold text-black rounded-lg hover:bg-white transition-colors font-bold shadow-lg shadow-pahs-gold/10">
+                Reset All
+            </button>
+        </div>
+    </main>
+    <div class="h-12"></div> <div id="modalOverlay" class="fixed inset-0 bg-black/90 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity opacity-0" onclick="closeModal(event)">
+        <div id="modalContent" class="bg-gray-100 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+            
+            <div class="relative p-6 pb-0 flex flex-col items-center text-center">
+                <button onclick="closeModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 text-gray-600 hover:bg-black hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                
+                <div id="modalSchoolBadge" class="px-6 py-3 rounded-2xl shadow-sm mb-3 mt-4 border-2">
+                    <h2 id="modalSchool" class="text-xl font-bold leading-tight">School Name</h2>
+                </div>
+                <p id="modalTeam" class="text-gray-600 font-semibold text-lg">Team Name</p>
+            </div>
+
+            <div class="p-6 overflow-y-auto">
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div id="modalBadgeClass" class="bg-white p-3 rounded-xl border border-gray-200 text-center">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Class</p>
+                        <p id="modalClass" class="text-lg font-extrabold text-gray-900">6A</p>
+                    </div>
+                    <div id="modalBadgeDistrict" class="bg-white p-3 rounded-xl border border-gray-200 text-center">
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">District</p>
+                        <p id="modalDistrict" class="text-lg font-extrabold text-gray-900">1</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div id="modalLocationContainer" class="flex items-center gap-4 p-4 rounded-xl bg-white border border-gray-200 cursor-pointer hover:bg-gray-50 hover:border-pahs-gold transition-colors group">
+                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shadow-sm text-lg border border-gray-200">
+                            <i id="modalLocationIcon" class="fa-solid fa-location-dot text-gray-400"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">Location</p>
+                            <p id="modalCity" class="text-gray-800 font-semibold group-hover:text-black transition-colors">City, State</p>
+                        </div>
+                        <i class="fa-solid fa-satellite text-gray-300 group-hover:text-black transition-colors"></i>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-white border border-gray-200">
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Conference</p>
+                        <p id="modalConference" class="text-gray-700 font-medium text-sm">No Data</p>
+                    </div>
+
+                     <div class="p-4 rounded-xl bg-white border border-gray-200">
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">State Titles</p>
+                        <p id="modalChamps" class="text-gray-700 font-medium text-sm italic">None</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <a id="modalSearchLink" href="#" target="_blank" class="flex items-center justify-center w-full py-3.5 bg-black text-white rounded-xl font-bold hover:bg-pahs-gold hover:text-black transition-all shadow-lg">
+                        <i class="fa-brands fa-google mr-2"></i> Search Team
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mapModalOverlay" class="fixed inset-0 bg-black/95 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="closeMapModal()">
+        <div class="bg-gray-100 w-full max-w-5xl h-[80vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-gray-400" onclick="event.stopPropagation()">
+            <div class="px-4 py-3 bg-white border-b border-gray-200 flex justify-between items-center shrink-0">
+                <span class="font-bold text-gray-800"><i class="fa-solid fa-satellite text-pahs-gold mr-2"></i>Satellite View</span>
+                <button onclick="closeMapModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-500 hover:bg-gray-300 hover:text-black transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <iframe id="mapFrame" class="flex-1 w-full bg-black" frameborder="0"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const sheetUrl = "https://docs.google.com/spreadsheets/d/1-FvaWHAtW6v690e0TLkMQPYMhUZ0dJ9kz6heqpCyfqo/gviz/tq?tqx=out:csv&sheet=TeamDirectory";
+        // ---------------------
+
+        let allData = [], filteredData = [];
+        
+        // Extended Colors
+        const colorNameMap = {
+            "white": "#FFFFFF", "black": "#000000", "gold": "#FFD700", "yellow": "#FFFF00", "red": "#EF4444", "blue": "#3B82F6", 
+            "green": "#22C55E", "purple": "#A855F7", "orange": "#F97316", "navy": "#1e3a8a", "navy blue": "#1e3a8a", "grey": "#64748b",
+            "gray": "#64748b", "silver": "#94a3b8", "maroon": "#7f1d1d", "cardinal": "#991b1b", "crimson": "#be123c", "royal blue": "#2563eb",
+            "kelly green": "#16a34a", "forest green": "#14532d", "vegas gold": "#eab308", "columbia blue": "#7dd3fc", "sky blue": "#0ea5e9",
+            "brown": "#451a03", "teal": "#0d9488", "pink": "#f472b6", "old gold": "#ca8a04", "scarlet": "#dc2626", "dark green": "#14532d", "midnight blue": "#172554"
+        };
+
+        // DOM Elements
+        const els = {
+            grid: document.getElementById('teamGrid'),
+            loading: document.getElementById('loading'),
+            noResults: document.getElementById('noResults'),
+            search: document.getElementById('searchInput'),
+            clear: document.getElementById('clearBtn'),
+            district: document.getElementById('districtFilter'),
+            class: document.getElementById('classFilter'),
+            summary: document.getElementById('filterSummary'),
+            summaryList: document.getElementById('activeFiltersList')
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            
+            // Search Logic
+            els.search.addEventListener('input', () => {
+                handleSearch();
+                els.clear.classList.toggle('hidden', els.search.value.trim().length === 0);
+            });
+            els.clear.addEventListener('click', () => {
+                els.search.value = '';
+                els.clear.classList.add('hidden');
+                handleSearch();
+                els.search.focus();
+            });
+
+            // Filters
+            els.district.addEventListener('change', handleSearch);
+            els.class.addEventListener('change', handleSearch);
+
+            // Esc Key
+            document.addEventListener('keydown', e => {
+                if(e.key === 'Escape') {
+                    if(!document.getElementById('mapModalOverlay').classList.contains('hidden')) closeMapModal();
+                    else closeModal();
+                }
+            });
+        });
+
+        function fetchData() {
+            Papa.parse(sheetUrl, {
+                download: true, header: true, skipEmptyLines: true,
+                complete: res => {
+                    allData = res.data.map(row => {
+                        const newRow = {};
+                        Object.keys(row).forEach(k => newRow[k.trim()] = row[k]);
+                        if(newRow['Team']) newRow['Team'] = newRow['Team'].replace(/^\*+|\*+$/g, '').trim();
+                        if(newRow['School']) newRow['School'] = newRow['School'].replace(/^\*+|\*+$/g, '').trim();
+                        return newRow;
+                    }).filter(r => r['School']);
+                    
+                    filteredData = allData;
+                    populateFilters(allData);
+                    renderCards(filteredData);
+                    els.loading.classList.add('hidden');
+                    els.grid.classList.remove('hidden');
+                },
+                error: () => showError("Could not load data.")
+            });
+        }
+
+        function populateFilters(data) {
+            const dSet = new Set(), cSet = new Set();
+            data.forEach(r => {
+                if(r['District']) dSet.add(r['District'].trim());
+                if(r['Class']) cSet.add(r['Class'].trim());
+            });
+
+            const sortNum = (a,b) => {
+                const nA = parseInt(a.replace(/\D/g,'')), nB = parseInt(b.replace(/\D/g,''));
+                return (!isNaN(nA) && !isNaN(nB)) ? nA - nB : a.localeCompare(b);
+            };
+
+            Array.from(dSet).sort(sortNum).forEach(d => {
+                els.district.add(new Option(`District ${d}`, d));
+            });
+            Array.from(cSet).sort().forEach(c => {
+                els.class.add(new Option(`Class ${c}`, c));
+            });
+        }
+
+        // --- CORE COLOR LOGIC ---
+        const normalizeColor = c => {
+            if(!c) return null;
+            const l = c.toLowerCase().trim();
+            return colorNameMap[l] || c;
+        };
+        const getContrast = hex => {
+            if(!hex) return 'black';
+            let h = normalizeColor(hex).replace('#','');
+            if(h.length === 3) h = h.split('').map(x=>x+x).join('');
+            if(h.length !== 6) return 'black';
+            const r = parseInt(h.substr(0,2),16), g = parseInt(h.substr(2,2),16), b = parseInt(h.substr(4,2),16);
+            // Returns 'white' if background is DARK (so we need white text)
+            // Returns 'black' if background is LIGHT (so we need black text)
+            return (isNaN(r)) ? 'black' : (((r*299)+(g*587)+(b*114))/1000 >= 128 ? 'black' : 'white');
+        };
+        const parseColors = str => {
+            const p = (str||'').split(/[&/,]+/).map(s=>s.trim()).filter(s=>s);
+            return { p: normalizeColor(p[0]), a: p.slice(1).map(normalizeColor) };
+        };
+
+        function renderCards(data) {
+            els.grid.innerHTML = '';
+            if(!data.length) { els.noResults.classList.remove('hidden'); return; }
+            else els.noResults.classList.add('hidden');
+
+            data.forEach((row, idx) => {
+                const { p, a } = parseColors(row['Colors']||row['Color']||'');
+                
+                // Name Badge Styles (Dynamic based on team)
+                let badgeStyle = `background: #e5e5e5; color: #171717;`; // Default Gray
+                if(p) {
+                    const txt = getContrast(p) === 'black' ? '#000000' : '#FFFFFF';
+                    badgeStyle = `background: ${p}; color: ${txt};`;
+                }
+
+                // Accent Logic (Badge Class/District)
+                const getAccentStyle = (i) => {
+                    const c = a[i] || p;
+                    // Default fallback for Light Card
+                    if(!c) return `background: #ffffff; color: #525252; border: 1px solid #e5e5e5;`;
+                    
+                    const txt = getContrast(c) === 'black' ? 'black' : 'white';
+                    return `background: ${c}; color: ${txt}; border: 1px solid transparent;`;
+                };
+
+                // Light Card Styles
+                const card = document.createElement('div');
+                card.className = "group bg-pahs-cardLight rounded-2xl p-5 border-none card-hover cursor-pointer flex flex-col justify-between transition-all";
+                card.onclick = () => openModal(idx);
+                card.innerHTML = `
+                    <div>
+                        <div class="flex gap-2 mb-4">
+                            <span class="text-[10px] font-bold px-2 py-1 rounded-md shadow-sm" style="${getAccentStyle(0)}">
+                                ${row['Class'] || 'N/A'}
+                            </span>
+                            <span class="text-[10px] font-bold px-2 py-1 rounded-md shadow-sm" style="${getAccentStyle(1)}">
+                                D${row['District'] || 'N/A'}
+                            </span>
+                        </div>
+                        <div class="inline-block px-3 py-1.5 rounded-lg shadow-sm mb-2" style="${badgeStyle}">
+                            <h3 class="font-bold text-lg leading-tight">${row['School']}</h3>
+                        </div>
+                        <p class="text-gray-600 font-medium text-sm pl-1">${row['Team'] || 'Team'}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-200 flex items-center gap-2 text-gray-500 text-xs font-bold uppercase tracking-wide group-hover:text-black transition-colors">
+                        <i class="fa-solid fa-location-dot" style="color:${p||'#9ca3af'}"></i>
+                        <span class="truncate">${row['City/Town']||''}</span>
+                    </div>
+                `;
+                els.grid.appendChild(card);
+            });
+        }
+
+        // --- FILTER LOGIC ---
+        function handleSearch() {
+            const q = els.search.value.toLowerCase().trim();
+            const d = els.district.value, c = els.class.value;
+            const filters = [];
+            if(d !== 'All') filters.push(`District ${d}`);
+            if(c !== 'All') filters.push(`Class ${c}`);
+            
+            if(filters.length) {
+                els.summary.classList.remove('hidden');
+                els.summaryList.innerHTML = filters.map(f=>`<span class="px-2 py-0.5 bg-gray-800 text-gray-200 border border-gray-700 rounded text-[10px] font-bold">${f}</span>`).join('');
+            } else els.summary.classList.add('hidden');
+
+            filteredData = allData.filter(r => {
+                const txt = (r['School']+r['Team']+r['City/Town']).toLowerCase();
+                return (!q || txt.includes(q)) && 
+                       (d === 'All' || r['District'] == d) && 
+                       (c === 'All' || r['Class'] == c);
+            });
+            renderCards(filteredData);
+        }
+        function resetAllFilters() {
+            els.search.value = ''; els.district.value = 'All'; els.class.value = 'All';
+            handleSearch();
+        }
+
+        // --- MODALS ---
+        function openModal(idx) {
+            const d = filteredData[idx];
+            const { p, a } = parseColors(d['Colors']||'');
+            
+            // Populate Text
+            document.getElementById('modalSchool').innerText = d['School'];
+            document.getElementById('modalTeam').innerText = d['Team'] || 'Varsity Football';
+            document.getElementById('modalClass').innerText = d['Class'] || '-';
+            document.getElementById('modalDistrict').innerText = d['District'] || '-';
+            document.getElementById('modalCity').innerText = d['City/Town'] || 'Unknown';
+            document.getElementById('modalConference').innerText = d['Conference/League'] || 'N/A';
+            document.getElementById('modalChamps').innerText = d['State Championships'] || 'None';
+            
+            // --- SCHOOL NAME BADGE (Outline Logic) ---
+            const badge = document.getElementById('modalSchoolBadge');
+            const title = document.getElementById('modalSchool');
+            
+            // Reset to White Background
+            badge.style.backgroundColor = '#ffffff';
+            badge.style.borderWidth = '2px';
+
+            if(p) {
+                // If the color is DARK (contrast is white), we can use it for text/border
+                // If the color is LIGHT (contrast is black), we must use BLACK for text/border to be seen
+                const isDarkColor = getContrast(p) === 'white'; 
+                
+                const safeColor = isDarkColor ? p : '#000000';
+                
+                badge.style.borderColor = safeColor;
+                badge.style.color = safeColor;
+                title.style.color = safeColor;
+            } else {
+                // Default if no color
+                badge.style.borderColor = '#e5e5e5';
+                badge.style.color = '#171717';
+                title.style.color = '#171717';
+            }
+
+            // --- ACCENT BADGES (Class/District - Outline Style) ---
+            const setBadge = (id, col) => {
+                const el = document.getElementById(id);
+                // Background always white
+                el.style.background = '#ffffff';
+                el.style.color = '#171717'; // Text always dark for readability
+                el.style.borderWidth = '2px';
+
+                if(col) {
+                     // Outline is team color
+                    el.style.borderColor = col;
+                } else {
+                    el.style.borderColor = '#e5e5e5';
+                }
+            };
+            setBadge('modalBadgeClass', a[0] || p);
+            setBadge('modalBadgeDistrict', a[1] || a[0] || p);
+            
+            // Icon
+            document.getElementById('modalLocationIcon').style.color = p || '#9ca3af';
+
+            // Links
+            const locBox = document.getElementById('modalLocationContainer');
+            if(d['City/Town']) {
+                locBox.onclick = () => openMapModal(d['City/Town']);
+                locBox.classList.remove('opacity-50','pointer-events-none');
+            } else {
+                locBox.onclick = null;
+                locBox.classList.add('opacity-50','pointer-events-none');
+            }
+            
+            document.getElementById('modalSearchLink').href = `https://www.google.com/search?q=${encodeURIComponent(d['School'] + " " + d['Team'] + " football PA")}`;
+
+            // Show
+            const ov = document.getElementById('modalOverlay');
+            ov.classList.remove('hidden');
+            setTimeout(() => {
+                ov.classList.remove('opacity-0');
+                document.getElementById('modalContent').classList.remove('scale-95');
+                document.getElementById('modalContent').classList.add('scale-100');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const ov = document.getElementById('modalOverlay');
+            const cnt = document.getElementById('modalContent');
+            ov.classList.add('opacity-0');
+            cnt.classList.remove('scale-100');
+            cnt.classList.add('scale-95');
+            setTimeout(() => {
+                ov.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 300);
+        }
+
+        function openMapModal(loc) {
+            document.getElementById('mapModalOverlay').classList.remove('hidden');
+            document.getElementById('mapFrame').src = `https://maps.google.com/maps?q=${encodeURIComponent(loc)}&t=k&z=15&ie=UTF8&iwloc=&output=embed`;
+        }
+        function closeMapModal() {
+            document.getElementById('mapModalOverlay').classList.add('hidden');
+            document.getElementById('mapFrame').src = '';
+        }
+    </script>
+</body>
+</html>
