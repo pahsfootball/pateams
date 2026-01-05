@@ -489,7 +489,9 @@
                 locBox.classList.add('opacity-50','pointer-events-none');
             }
             
-            document.getElementById('modalSearchLink').href = `https://www.google.com/search?q=${encodeURIComponent(d['School'] + " " + d['Team'] + " football PA")}`;
+            // We phrase this as a question/command to trigger Google's AI Overview
+const aiQuery = `Overview and history of the ${d['School']} ${d['Team']} football program Pennsylvania`;
+document.getElementById('modalSearchLink').href = `https://www.google.com/search?q=${encodeURIComponent(aiQuery)}`;
 
             // Show
             const ov = document.getElementById('modalOverlay');
